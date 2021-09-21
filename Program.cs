@@ -196,19 +196,36 @@ namespace Sockets
             head.Append("Content-Type: text/html; charset=utf-8\r\n");
             var body = File.ReadAllBytes("hello.html");
             var htmlBody = Encoding.UTF8.GetString(body);
-            var greeting = HttpUtility.HtmlEncode(query["greeting"]);
+            var greeting = GetQuerySafe(request, query, "greeting");
             if (greeting != null)
             {
+                head.Append($"Set-Cookie: greeting={HttpUtility.UrlEncode(greeting)}\r\n");
                 htmlBody = htmlBody.Replace("{{Hello}}", greeting);
             }
-            var name = HttpUtility.HtmlEncode(query["name"]);
+            var name = GetQuerySafe(request, query, "name");
             if (name != null)
             {
+                head.Append($"Set-Cookie: name={HttpUtility.UrlEncode(name)}\r\n");
                 htmlBody = htmlBody.Replace("{{World}}", name);
             }
 
             body = Encoding.UTF8.GetBytes(htmlBody);
             return body;
+        }
+
+        private static string GetQuerySafe(Request request, NameValueCollection query, string key)
+        {
+            var field = HttpUtility.HtmlEncode(query[key]);
+            if (field != null) return field;
+            var cookies = request.Headers.Find(h => h.Name == "Cookie");
+            if (cookies == null) return null;
+            Console.WriteLine(cookies.Value);
+            field = cookies.Value.Split("; ")
+                .Select(c => c.Split('='))
+                .FirstOrDefault(t => t[0] == key)?[1];
+            field = HttpUtility.UrlDecode(field);
+            Console.WriteLine(field);
+            return HttpUtility.HtmlEncode(field);
         }
 
         // Собирает ответ в виде массива байт из байтов строки head и байтов body.
