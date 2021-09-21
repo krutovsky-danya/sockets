@@ -159,19 +159,26 @@ namespace Sockets
 
         private static byte[] ProcessRequest(Request request)
         {
-            var uri = request.RequestUri;
+            var uri = request.RequestUri.Split('?');
+            var path = uri[0];
+            var query = HttpUtility.ParseQueryString(uri.Length == 1 ? "" :uri[1]);
             var head = new StringBuilder("HTTP/1.1 200 OK\r\n");
             var body = new byte[0];
             Console.Error.WriteLine(uri);
-            switch (uri)
+            switch (path)
             {
                 case "/" or "/hello.html":
-                    head.Append("Content-Type: text/html; charset=utf-8\r\n");
-                    body = File.ReadAllBytes("hello.html");
+                    body = GetHello(request, head, query);
                     break;
                 case "/groot.gif":
                     head.Append("Content-Type: image/gif\r\n");
                     body = File.ReadAllBytes("groot.gif");
+                    break;
+                case "/time.html":
+                    head.Append("Content-Type: text/html; charset=utf-8\r\n");
+                    body = File.ReadAllBytes("time.template.html");
+                    var htmlBody = Encoding.UTF8.GetString(body).Replace("{{ServerTime}}", DateTime.Now.ToString(CultureInfo.InvariantCulture));
+                    body = Encoding.UTF8.GetBytes(htmlBody);
                     break;
                 default:
                     head = new StringBuilder("HTTP/1.1 404 Not Found\r\n");
@@ -182,6 +189,24 @@ namespace Sockets
             head.Append("\r\n");
             Console.WriteLine(head);
             return CreateResponseBytes(head, body);
+        }
+
+        private static byte[] GetHello(Request request, StringBuilder head, NameValueCollection query)
+        {
+            head.Append("Content-Type: text/html; charset=utf-8\r\n");
+            var body = File.ReadAllBytes("hello.html");
+            var htmlBody = Encoding.UTF8.GetString(body);
+            if (query["greeting"] != null)
+            {
+                htmlBody = htmlBody.Replace("{{Hello}}", query["greeting"]);
+            }
+            if (query["name"] != null)
+            {
+                htmlBody = htmlBody.Replace("{{World}}", query["name"]);
+            }
+
+            body = Encoding.UTF8.GetBytes(htmlBody);
+            return body;
         }
 
         // Собирает ответ в виде массива байт из байтов строки head и байтов body.
