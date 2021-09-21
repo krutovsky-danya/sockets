@@ -196,13 +196,15 @@ namespace Sockets
             head.Append("Content-Type: text/html; charset=utf-8\r\n");
             var body = File.ReadAllBytes("hello.html");
             var htmlBody = Encoding.UTF8.GetString(body);
-            if (query["greeting"] != null)
+            var greeting = HttpUtility.HtmlEncode(query["greeting"]);
+            if (greeting != null)
             {
-                htmlBody = htmlBody.Replace("{{Hello}}", query["greeting"]);
+                htmlBody = htmlBody.Replace("{{Hello}}", greeting);
             }
-            if (query["name"] != null)
+            var name = HttpUtility.HtmlEncode(query["name"]);
+            if (name != null)
             {
-                htmlBody = htmlBody.Replace("{{World}}", query["name"]);
+                htmlBody = htmlBody.Replace("{{World}}", name);
             }
 
             body = Encoding.UTF8.GetBytes(htmlBody);
