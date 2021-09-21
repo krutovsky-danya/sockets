@@ -159,24 +159,28 @@ namespace Sockets
 
         private static byte[] ProcessRequest(Request request)
         {
-            // TODO
             var uri = request.RequestUri;
-            Console.Error.WriteLine(uri);
-            if (uri is "/" or "/hello.html")
-            {
-                return ProcessHelloRequest();
-            }
-            var head = new StringBuilder("HTTP/1.1 404 Not Found\r\n");
-            var body = new byte[0];
-            return CreateResponseBytes(head, body);
-        }
-
-        private static byte[] ProcessHelloRequest()
-        {
             var head = new StringBuilder("HTTP/1.1 200 OK\r\n");
-            head.Append("Content-Type: text/html; charset=utf-8\r\n");
+            var body = new byte[0];
+            Console.Error.WriteLine(uri);
+            switch (uri)
+            {
+                case "/" or "/hello.html":
+                    head.Append("Content-Type: text/html; charset=utf-8\r\n");
+                    body = File.ReadAllBytes("hello.html");
+                    break;
+                case "/groot.gif":
+                    head.Append("Content-Type: image/gif\r\n");
+                    body = File.ReadAllBytes("groot.gif");
+                    break;
+                default:
+                    head = new StringBuilder("HTTP/1.1 404 Not Found\r\n");
+                    break;
+            }
+            
+            // head.Append($"Content-Length: {100500}\r\n");
             head.Append("\r\n");
-            var body = File.ReadAllBytes("hello.html");
+            Console.WriteLine(head);
             return CreateResponseBytes(head, body);
         }
 
